@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive atlas of Virginia land grants with year filtering and radius overlay" />
+  <meta name="keywords" content="virginia, land grants, historical maps, atlas, GIS" />
+  <meta name="author" content="Virginia Land Grant Atlas" />
+  
+  <!-- Open Graph meta tags -->
+  <meta property="og:title" content="Virginia Land Grant Atlas" />
+  <meta property="og:description" content="Interactive atlas of Virginia land grants with year filtering" />
+  <meta property="og:type" content="website" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  
+  <title>Virginia Land Grant Atlas</title>
+  
+  <style>
+    /* Critical CSS for initial load */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background: #1a1a1a;
+      color: white;
+      overflow: hidden;
+    }
+    
+    #root {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    
+    /* Loading indicator */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1000;
+    }
+    
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root">
+    <div class="loading">Loading Virginia Land Grant Atlas...</div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

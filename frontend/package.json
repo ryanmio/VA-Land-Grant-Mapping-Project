@@ -1,0 +1,57 @@
+{
+  "name": "virginia-land-grant-atlas",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Static Virginia Land Grant Atlas with buttery-smooth year filtering",
+  "scripts": {
+    "dev": "vite --port 5173",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "deploy": "npm run build && cp -r dist/* ../dist/",
+    "clean": "rm -rf dist .vite"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-range": "^1.8.14",
+    "react-router-dom": "^6.20.1",
+    "@deck.gl/core": "^9.1.14",
+    "@deck.gl/layers": "^9.1.14",
+    "@deck.gl/extensions": "^9.1.14",
+    "@deck.gl/react": "^9.1.14",
+    "@deck.gl/geo-layers": "^9.1.14",
+    "@loaders.gl/pmtiles": "^4.1.0",
+    "@loaders.gl/core": "^4.1.0",
+    "maplibre-gl": "^3.6.0",
+    "react-map-gl": "^7.1.6"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@typescript-eslint/eslint-plugin": "^6.14.0",
+    "@typescript-eslint/parser": "^6.14.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.55.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.5",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

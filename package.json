@@ -1,0 +1,45 @@
+{
+  "name": "virginia-land-grant-atlas",
+  "version": "1.0.0",
+  "description": "Static Virginia Land Grant Atlas with buttery-smooth year filtering",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "install": "cd frontend && npm install",
+    "clean-data": "python3 scripts/clean.py",
+    "make-tiles": "./scripts/make_tiles.sh",
+    "process-data": "npm run clean-data && npm run make-tiles",
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "preview": "cd frontend && npm run preview",
+    "deploy-gh-pages": "npm run build && npm run copy-data && gh-pages -d frontend/dist",
+    "copy-data": "mkdir -p frontend/dist/data && cp data/grants.pmtiles frontend/dist/data/",
+    "setup": "npm run install && npm run process-data"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/virginia-land-grant-atlas.git"
+  },
+  "keywords": [
+    "virginia",
+    "land-grants",
+    "historical-maps",
+    "gis",
+    "interactive-atlas",
+    "deckgl",
+    "pmtiles"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/virginia-land-grant-atlas/issues"
+  },
+  "homepage": "https://github.com/your-username/virginia-land-grant-atlas#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.11.0"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.1.0"
+  }
+}
