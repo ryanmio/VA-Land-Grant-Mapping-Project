@@ -201,6 +201,11 @@ const GrantMap: React.FC<GrantMapProps> = ({
             return (
               <>
                 <div><strong>Year:</strong> {hoveredFeature.properties.year || 'Unknown'}</div>
+                {hoveredFeature.properties.description && (
+                  <div>
+                    <strong>Description:</strong> {String(hoveredFeature.properties.description).slice(0, 160)}
+                  </div>
+                )}
                 {typeof bookNum === 'number' && (
                   <div><strong>Patent Book:</strong> Book {bookNum}</div>
                 )}
