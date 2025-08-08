@@ -74,10 +74,12 @@ const GrantMap: React.FC<GrantMapProps> = ({
     getPosition: (d: GrantFeature) => d.geometry.coordinates,
     
     // Radius based on showRadius toggle
-    getRadius: showRadius ? 23000 : 30, // 23km or 30m
+    // Use meters for true geodesic sizing; remove pixel clamping for overlay
+    getRadius: showRadius ? 23000 : 30, // 23km overlay or 30m point size
+    radiusUnits: 'meters',
     radiusScale: 1,
-    radiusMinPixels: showRadius ? 1 : 2,
-    radiusMaxPixels: showRadius ? 100 : 8,
+    radiusMinPixels: showRadius ? 0 : 2,
+    radiusMaxPixels: showRadius ? Number.MAX_SAFE_INTEGER : 8,
     
     // Color based on year (gradient from blue to red)
     getFillColor: (d: GrantFeature) => {
