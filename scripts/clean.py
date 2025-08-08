@@ -218,7 +218,7 @@ def process_csv_to_geojson(input_file: Path, output_file: Path) -> None:
             # Build properties dict
             properties = {
                 'year': year,
-                'row_id': row.get('row_id', ''),
+                'grant_id': row.get('grant_id', ''),
                 'description': clean_description(description)[:500],  # Truncate long descriptions
                 'tokens_used': int(row.get('tokens_used', 0)) if row.get('tokens_used', '').isdigit() else 0
             }

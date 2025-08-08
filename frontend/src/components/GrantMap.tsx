@@ -16,6 +16,7 @@ interface GrantMapProps {
 interface GrantFeature {
   properties: {
     year: number
+    grant_id?: string
     [key: string]: unknown
   }
   geometry: {
@@ -192,15 +193,23 @@ const GrantMap: React.FC<GrantMapProps> = ({
             border: '1px solid rgba(255, 255, 255, 0.2)'
           }}
         >
-          <div><strong>Year:</strong> {hoveredFeature.properties.year || 'Unknown'}</div>
-          {Object.entries(hoveredFeature.properties)
-            .filter(([key]) => key !== 'year')
-            .slice(0, 3)
-            .map(([key, value]) => (
-              <div key={key}>
-                <strong>{key.replace(/_/g, ' ')}:</strong> {String(value).slice(0, 50)}
-              </div>
-            ))}
+          {(() => {
+            const gid = (hoveredFeature.properties.grant_id as string | undefined) || ''
+            const parts = gid.split('_')
+            const cpVol = parts[0] === 'III' ? 'Cavaliers and Pioneers Volume III' : parts[0] === 'II' ? 'Cavaliers and Pioneers Volume II' : undefined
+            const bookNum = parts.length >= 2 && /^\d+$/.test(parts[1]) ? parseInt(parts[1], 10) : undefined
+            return (
+              <>
+                <div><strong>Year:</strong> {hoveredFeature.properties.year || 'Unknown'}</div>
+                {typeof bookNum === 'number' && (
+                  <div><strong>Patent Book:</strong> Book {bookNum}</div>
+                )}
+                {cpVol && (
+                  <div><strong>C&P Volume:</strong> {cpVol}</div>
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
 
