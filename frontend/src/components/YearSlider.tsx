@@ -16,7 +16,7 @@ const YearSlider: React.FC<YearSliderProps> = ({
   yearMax,
   onChange,
   min = 1600,
-  max = 2000,
+  max = 1800,
   step = 1,
   disabled = false
 }) => {

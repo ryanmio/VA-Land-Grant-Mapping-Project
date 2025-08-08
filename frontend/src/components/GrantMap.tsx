@@ -81,7 +81,7 @@ const GrantMap: React.FC<GrantMapProps> = ({
     // Color based on year (gradient from blue to red)
     getFillColor: (d: GrantFeature) => {
       const year = d.properties.year || 1700
-      const normalizedYear = (year - 1600) / (2000 - 1600)
+      const normalizedYear = (year - 1600) / (1800 - 1600)
       
       // Blue to red gradient
       const red = Math.floor(normalizedYear * 255)

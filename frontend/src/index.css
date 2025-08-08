@@ -129,8 +129,9 @@ body {
   cursor: pointer;
 }
 
-/* Export button */
-.export-button {
+/* Control buttons */
+.export-button,
+.play-button {
   background: #4f9eff;
   color: white;
   border: none;
@@ -143,16 +144,19 @@ body {
   width: 100%;
 }
 
-.export-button:hover {
+.export-button:hover,
+.play-button:hover {
   background: #357abd;
   transform: translateY(-1px);
 }
 
-.export-button:active {
+.export-button:active,
+.play-button:active {
   transform: translateY(0);
 }
 
-.export-button:disabled {
+.export-button:disabled,
+.play-button:disabled {
   background: rgba(255, 255, 255, 0.2);
   cursor: not-allowed;
   transform: none;

@@ -12,14 +12,19 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
 
-def parse_coordinates(latlon_str: str) -> Tuple[Optional[float], Optional[float]]:
+# Default to geographic centroid of Virginia if coordinates are missing / invalid
+VA_CENTROID_LON = -78.5  # approx
+VA_CENTROID_LAT = 37.5
+
+def parse_coordinates(latlon_str: str) -> Tuple[float, float]:
     """Parse coordinates from the latlon field with various formats."""
     if not latlon_str or latlon_str.strip() == '':
-        return None, None
+        # Missing coordinate string – fall back to Virginia centroid
+        return VA_CENTROID_LON, VA_CENTROID_LAT
     
     # Skip obvious error messages
     if 'Unfortunately' in latlon_str or 'not sufficient' in latlon_str:
-        return None, None
+        return VA_CENTROID_LON, VA_CENTROID_LAT
     
     # Try to extract coordinates using regex patterns
     # Format 1: [37]°[41]'[00.0000]"N [77]°[00]'[00.0000]"W
@@ -30,10 +35,11 @@ def parse_coordinates(latlon_str: str) -> Tuple[Optional[float], Optional[float]
     
     # Pattern to match degrees, minutes, seconds format
     coord_pattern = r'(\d+)°(\d+)\'([\d.]+)"([NS])\s+(\d+)°(\d+)\'([\d.]+)"([EW])'
-    match = re.search(coord_pattern, clean_str)
+    match = re.search(coord_pattern, clean_str, re.IGNORECASE)
     
     if not match:
-        return None, None
+        # Regex failed – use centroid fallback
+        return VA_CENTROID_LON, VA_CENTROID_LAT
     
     try:
         # Parse latitude (first coordinate)
@@ -52,40 +58,98 @@ def parse_coordinates(latlon_str: str) -> Tuple[Optional[float], Optional[float]
         lat = lat_deg + lat_min/60 + lat_sec/3600
         lon = lon_deg + lon_min/60 + lon_sec/3600
         
-        # Apply direction
-        if lat_dir == 'S':
+        # Apply direction (case-insensitive)
+        if lat_dir.upper() == 'S':
             lat = -lat
-        if lon_dir == 'W':
+        if lon_dir.upper() == 'W':
             lon = -lon
         
         # Virginia bounds check
         if not (36.0 <= lat <= 40.0) or not (-84.0 <= lon <= -75.0):
-            return None, None
+            # Out-of-bounds – substitute centroid
+            return VA_CENTROID_LON, VA_CENTROID_LAT
             
         return lon, lat
         
     except (ValueError, IndexError):
-        return None, None
+        return VA_CENTROID_LON, VA_CENTROID_LAT
 
 
 def extract_year_from_description(description: str) -> Optional[int]:
-    """Extract year from the description field."""
+    """Return a robustly-extracted grant year.
+
+    This mirrors the multi-stage logic proven in the previous *Cavaliers &
+    Pioneers* extraction project:
+
+    1.  Normalise text (collapse whitespace, replace fancy dashes).
+    2.  Prefer a year that appears *after* the acreage token because the
+        abstracts generally list acreage before the date.
+    3.  Fall back to the first year anywhere in the head slice.
+    4.  Attempt OCR-error fixes such as ``i725`` → ``1725``.
+    5.  Accept only years in the range 1600-1932 (covers vols. 3–8).
+
+    Args:
+        description: Raw grant abstract from the CSV.
+
+    Returns:
+        int between 1600 and 1932, or ``None`` if no valid year found.
+    """
     if not description:
         return None
-    
-    # Look for dates in format like "25 Oct. 1695"
-    year_patterns = [
-        r'\b(1[6-9]\d{2})\b',  # 4-digit years 1600-1999
-        r'\b(20[0-2]\d)\b',    # 2000-2029
-    ]
-    
-    for pattern in year_patterns:
-        matches = re.findall(pattern, description)
-        if matches:
-            year = int(matches[0])
-            if 1600 <= year <= 2000:
-                return year
-    
+
+    # ------------------------------------------------------------------
+    # 1. Pre-processing
+    # ------------------------------------------------------------------
+    clean = description.replace("\u2014", "-").replace("\u2013", "-")
+    clean = re.sub(r"\s+", " ", clean.strip())
+
+    # Slice the first 800 characters – enough for almost all abstracts but
+    # small enough to keep regex operations quick.
+    head = clean[:800]
+
+    # ------------------------------------------------------------------
+    # 2. Regex patterns
+    # ------------------------------------------------------------------
+    year_re = re.compile(r"(16|17|18)\d{2}")
+    acre_re = re.compile(r"(\d+(?:\.\d+)?)\s*a(?:c|cs|cres|res)?\.?", re.IGNORECASE)
+
+    # Locate acreage token (commonly precedes the date)
+    m_ac = acre_re.search(head)
+
+    # ------------------------------------------------------------------
+    # 3. Multi-stage year search
+    # ------------------------------------------------------------------
+    year_match = None
+    if m_ac:
+        year_match = year_re.search(head[m_ac.end():])
+    if year_match is None:
+        year_match = year_re.search(head)
+    if year_match is None and m_ac:
+        # As a last resort, scan beyond the head slice but still after acreage
+        year_match = year_re.search(clean[m_ac.end():])
+
+    # ------------------------------------------------------------------
+    # 4. OCR-error recovery (e.g. "i725", "(727")
+    # ------------------------------------------------------------------
+    if year_match is None:
+        ocr_match = re.search(r"[iI\(](6|7|8)\d{2}", head)
+        if ocr_match:
+            yr_str = "1" + ocr_match.group(1) + ocr_match.group(0)[2:]
+            try:
+                yr_int = int(yr_str)
+                if 1600 <= yr_int <= 1932:
+                    return yr_int
+            except ValueError:
+                pass
+        return None
+
+    # ------------------------------------------------------------------
+    # 5. Validate and return normal match
+    # ------------------------------------------------------------------
+    yr_int = int(year_match.group(0))
+    if 1600 <= yr_int <= 1932:
+        return yr_int
+
     return None
 
 
@@ -135,18 +199,21 @@ def process_csv_to_geojson(input_file: Path, output_file: Path) -> None:
             latlon_str = row.get('latlon', '')
             lon, lat = parse_coordinates(latlon_str)
             
-            if lon is None or lat is None:
-                skipped_no_coords += 1
-                continue
+            # Coordinates are always available (centroid fallback ensures this)
             
-            # Extract year from description
-            description = row.get('description', '')
-            year = extract_year_from_description(description)
+                        # Year is already provided in mapped_grants.csv
+            year_str = row.get('year', '')
+            try:
+                year = int(float(year_str)) if year_str else None
+            except ValueError:
+                year = None
             
             if not year:
                 skipped_no_year += 1
-                # Still include points without years, but assign default
                 year = 1700
+            
+            # For tooltips we still want a short description snippet if present
+            description = row.get('raw_entry', '')[:300]
             
             # Build properties dict
             properties = {
@@ -196,7 +263,7 @@ def main():
     script_dir = Path(__file__).parent
     project_root = script_dir.parent
     
-    input_file = project_root / "data" / "raw" / "results_full_v2.csv"
+    input_file = project_root / "data" / "mapped_grants.csv"
     output_file = project_root / "data" / "cleaned.geojson"
     
     # Ensure output directory exists
