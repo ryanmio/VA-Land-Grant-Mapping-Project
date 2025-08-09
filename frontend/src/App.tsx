@@ -15,7 +15,7 @@ const App: React.FC = () => {
   const [stats, setStats] = useState<Stats>({ visibleCount: 0, totalCount: 0 })
   const [isPlaying, setIsPlaying] = useState(false)
   const playTimerRef = useRef<number | null>(null)
-  const [soundEnabled, setSoundEnabled] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
   const lastTickedYearRef = useRef<number | null>(null)
   const lastSoundedYearRef = useRef<number | null>(null)
   const latestYearCountsRef = useRef<Map<number, number>>(new Map())
@@ -59,13 +59,10 @@ const App: React.FC = () => {
     updateURL(yearMin, yearMax, newShowRadius)
   }, [updateURL, yearMin, yearMax])
 
-  // Sound toggle; initialize audio on first enable (user gesture)
-  const handleSoundToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = event.target.checked
-    setSoundEnabled(enabled)
-    if (enabled) {
-      sonifier.init()
-    }
+  // Mute toggle (audio is on by default; this just prevents playback)
+  const handleMuteToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const muted = event.target.checked
+    setIsMuted(muted)
   }, [])
 
   // Handle stats updates from the map
@@ -79,6 +76,8 @@ const App: React.FC = () => {
     setIsPlaying(true)
     lastTickedYearRef.current = null
     lastSoundedYearRef.current = null
+    // Initialize/resume audio context on user gesture
+    sonifier.init()
     
     const startYear = 1600
     const endYear = 1800
@@ -102,7 +101,7 @@ const App: React.FC = () => {
         setIsPlaying(false)
       }
     }, 50)
-  }, [isPlaying, updateURL, showRadius, soundEnabled])
+  }, [isPlaying, updateURL, showRadius])
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -146,7 +145,7 @@ const App: React.FC = () => {
         }}
         onRenderedYearTick={(year, count) => {
           // Only sound when actively playing, sound enabled, and the render shows new points
-          if (!isPlaying || !soundEnabled) return
+          if (!isPlaying || isMuted) return
           if (lastSoundedYearRef.current === year) return
           if (count > 0) {
             sonifier.playYear(year, count)
@@ -168,18 +167,33 @@ const App: React.FC = () => {
           disabled={isLoading}
         />
 
-        <div className="checkbox-container">
-          <input
-            type="checkbox"
-            id="radius-toggle"
-            checked={showRadius}
-            onChange={handleRadiusToggle}
-            disabled={isLoading}
-          />
-          <label htmlFor="radius-toggle">
-            Show ±23km Radius Overlay
-          </label>
-        </div>
+        <details style={{ marginTop: 12 }}>
+          <summary style={{ cursor: 'pointer', color: '#ccc', marginBottom: 8 }}>Options</summary>
+          <div className="checkbox-container">
+            <input
+              type="checkbox"
+              id="radius-toggle"
+              checked={showRadius}
+              onChange={handleRadiusToggle}
+              disabled={isLoading}
+            />
+            <label htmlFor="radius-toggle">
+              Show ±23km Radius Overlay
+            </label>
+          </div>
+          <div className="checkbox-container">
+            <input
+              type="checkbox"
+              id="mute-toggle"
+              checked={isMuted}
+              onChange={handleMuteToggle}
+              disabled={isLoading}
+            />
+            <label htmlFor="mute-toggle">
+              Mute animation
+            </label>
+          </div>
+        </details>
 
         <button
           className="play-button"
@@ -188,19 +202,6 @@ const App: React.FC = () => {
         >
           {isPlaying ? 'Playing…' : 'Play Animation'}
         </button>
-
-        <div className="checkbox-container">
-          <input
-            type="checkbox"
-            id="sound-toggle"
-            checked={soundEnabled}
-            onChange={handleSoundToggle}
-            disabled={isLoading}
-          />
-          <label htmlFor="sound-toggle">
-            Enable sound on play
-          </label>
-        </div>
 
         <div className="stats">
           <div className="stats-item">
