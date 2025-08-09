@@ -12,6 +12,12 @@ export class Sonifier {
   private masterGain: GainNode | null = null
   private initialized: boolean = false
   private unlockAttached: boolean = false
+  private readonly isIOS: boolean = (() => {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent || ''
+    const isiOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in (document as any))
+    return !!isiOS
+  })()
 
   static getInstance(): Sonifier {
     if (!Sonifier.instance) {
@@ -24,7 +30,7 @@ export class Sonifier {
     if (this.initialized) return
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     const master = ctx.createGain()
-    master.gain.value = 0.5
+    master.gain.value = this.isIOS ? 0.8 : 0.5
 
     // Soft limiter to prevent peaks
     const limiter = ctx.createDynamicsCompressor()
@@ -137,7 +143,8 @@ export class Sonifier {
     // Number of notes: 1..16, scaling sublinearly with count
     const burstNotes = Math.max(1, Math.min(16, Math.round(2 * Math.log2(safeCount + 1))))
     // Total loudness grows with count but is log-compressed
-    const totalLoudness = 0.06 + 0.20 * Math.min(1, Math.log1p(safeCount) / Math.log(301))
+    const mobileBoost = this.isIOS ? 1.6 : 1.0
+    const totalLoudness = Math.min(0.38, mobileBoost * (0.06 + 0.20 * Math.min(1, Math.log1p(safeCount) / Math.log(301))))
     // Distribute across notes sublinearly to avoid clipping
     const perNoteGain = totalLoudness / Math.sqrt(burstNotes)
 
@@ -150,7 +157,7 @@ export class Sonifier {
 
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      osc.type = 'sine'
+      osc.type = this.isIOS ? 'triangle' : 'sine'
       const semi = detuneSemitones[i % detuneSemitones.length]
       const freqVar = freq * Math.pow(2, semi / 12)
       osc.frequency.setValueAtTime(freqVar, startAt)
