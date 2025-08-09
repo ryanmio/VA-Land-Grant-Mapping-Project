@@ -11,13 +11,6 @@ export class Sonifier {
   private audioContext: AudioContext | null = null
   private masterGain: GainNode | null = null
   private initialized: boolean = false
-  private unlockAttached: boolean = false
-  private readonly isIOS: boolean = (() => {
-    if (typeof navigator === 'undefined') return false
-    const ua = navigator.userAgent || ''
-    const isiOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in (document as any))
-    return !!isiOS
-  })()
 
   static getInstance(): Sonifier {
     if (!Sonifier.instance) {
@@ -30,7 +23,7 @@ export class Sonifier {
     if (this.initialized) return
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     const master = ctx.createGain()
-    master.gain.value = this.isIOS ? 0.8 : 0.5
+    master.gain.value = 0.5
 
     // Soft limiter to prevent peaks
     const limiter = ctx.createDynamicsCompressor()
@@ -46,73 +39,6 @@ export class Sonifier {
     this.audioContext = ctx
     this.masterGain = master
     this.initialized = true
-    this.attachUnlockHandlers()
-  }
-
-  // Ensure audio context is running (important for iOS Safari autoplay policies)
-  async ensureRunning(): Promise<void> {
-    if (!this.audioContext) return
-    if (this.audioContext.state !== 'running') {
-      try {
-        await this.audioContext.resume()
-      } catch (_) {
-        // ignore; will try again on next gesture
-      }
-    }
-  }
-
-  // Attach one-time gesture handlers to unlock audio on iOS
-  private attachUnlockHandlers(): void {
-    if (this.unlockAttached || !this.audioContext) return
-    const resume = async () => {
-      if (!this.audioContext) return
-      try {
-        await this.audioContext.resume()
-      } catch (_) {
-        /* no-op */
-      }
-      // Also play a tiny silent buffer to fully unlock on older iOS
-      this.pokeOutput()
-      if (this.audioContext.state === 'running') {
-        window.removeEventListener('touchend', resume, true)
-        window.removeEventListener('touchstart', resume, true)
-        window.removeEventListener('pointerdown', resume, true)
-        window.removeEventListener('click', resume, true)
-        window.removeEventListener('keydown', resume, true)
-        document.removeEventListener('visibilitychange', resume, true)
-        this.unlockAttached = false
-      }
-    }
-    window.addEventListener('touchend', resume, true)
-    window.addEventListener('touchstart', resume, true)
-    window.addEventListener('pointerdown', resume, true)
-    window.addEventListener('click', resume, true)
-    window.addEventListener('keydown', resume, true)
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        void resume()
-      }
-    }, true)
-    this.unlockAttached = true
-  }
-
-  // Play a minuscule buffer to prod iOS into enabling audio
-  private pokeOutput(): void {
-    if (!this.audioContext || !this.masterGain) return
-    try {
-      const ctx = this.audioContext
-      const buffer = ctx.createBuffer(1, 1, ctx.sampleRate)
-      const src = ctx.createBufferSource()
-      src.buffer = buffer
-      const gain = ctx.createGain()
-      gain.gain.value = 0.0001
-      src.connect(gain)
-      gain.connect(this.masterGain)
-      src.start(0)
-      src.stop(ctx.currentTime + 0.01)
-    } catch {
-      // ignore
-    }
   }
 
   // Map year to frequency using a C major pentatonic scale over ~2 octaves
@@ -143,8 +69,7 @@ export class Sonifier {
     // Number of notes: 1..16, scaling sublinearly with count
     const burstNotes = Math.max(1, Math.min(16, Math.round(2 * Math.log2(safeCount + 1))))
     // Total loudness grows with count but is log-compressed
-    const mobileBoost = this.isIOS ? 1.6 : 1.0
-    const totalLoudness = Math.min(0.38, mobileBoost * (0.06 + 0.20 * Math.min(1, Math.log1p(safeCount) / Math.log(301))))
+    const totalLoudness = Math.min(0.26, 0.06 + 0.20 * Math.min(1, Math.log1p(safeCount) / Math.log(301)))
     // Distribute across notes sublinearly to avoid clipping
     const perNoteGain = totalLoudness / Math.sqrt(burstNotes)
 
@@ -157,7 +82,7 @@ export class Sonifier {
 
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-      osc.type = this.isIOS ? 'triangle' : 'sine'
+      osc.type = 'sine'
       const semi = detuneSemitones[i % detuneSemitones.length]
       const freqVar = freq * Math.pow(2, semi / 12)
       osc.frequency.setValueAtTime(freqVar, startAt)

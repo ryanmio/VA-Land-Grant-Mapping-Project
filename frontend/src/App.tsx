@@ -84,12 +84,8 @@ const App: React.FC = () => {
     setIsPlaying(true)
     lastTickedYearRef.current = null
     lastSoundedYearRef.current = null
-    // Initialize/resume audio context on user gesture
+    // Initialize audio context on user gesture
     sonifier.init()
-    // Extra safety for iOS: ensure context is running
-    void sonifier.ensureRunning()
-    // Poke output on play to help older iOS versions
-    // (invoke playYear with 0 count won't emit; we just rely on ensureRunning/pokeOutput internally)
     
     const startYear = 1600
     const endYear = 1800
@@ -167,7 +163,6 @@ const App: React.FC = () => {
           if (!isPlaying || isMuted) return
           if (lastSoundedYearRef.current === year) return
           if (count > 0) {
-            void sonifier.ensureRunning()
             sonifier.playYear(year, count)
           }
           lastSoundedYearRef.current = year
