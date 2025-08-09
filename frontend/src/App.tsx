@@ -14,6 +14,14 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState<Stats>({ visibleCount: 0, totalCount: 0 })
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const saved = window.localStorage.getItem('panelCollapsed')
+      if (saved !== null) return saved === '1'
+    } catch {}
+    return false
+  })
   const playTimerRef = useRef<number | null>(null)
   const [isMuted, setIsMuted] = useState(false)
   const lastTickedYearRef = useRef<number | null>(null)
@@ -115,6 +123,13 @@ const App: React.FC = () => {
     }
   }, [])
 
+  // Persist collapsed state
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('panelCollapsed', isPanelCollapsed ? '1' : '0')
+    } catch {}
+  }, [isPanelCollapsed])
+
   // Simulate initial loading
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -157,9 +172,10 @@ const App: React.FC = () => {
         }}
       />
 
-      <div className="control-panel">
-        <h3>Virginia Land Grant Atlas</h3>
-        
+      <div className={`control-panel ${isPanelCollapsed ? 'collapsed' : ''}`}>
+        {!isPanelCollapsed && <h3>Virginia Land Grant Atlas</h3>}
+
+        {/* The year slider remains visible in both states */}
         <YearSlider
           yearMin={yearMin}
           yearMax={yearMax}
@@ -170,61 +186,75 @@ const App: React.FC = () => {
           disabled={isLoading}
         />
 
-        <details style={{ marginTop: 12 }}>
-          <summary style={{ cursor: 'pointer', color: '#e0e6f3', marginBottom: 8 }}>Options</summary>
-          <div className="checkbox-container">
-            <input
-              type="checkbox"
-              id="radius-toggle"
-              checked={showRadius}
-              onChange={handleRadiusToggle}
-              disabled={isLoading}
-            />
-            <label htmlFor="radius-toggle">
-              Show ±23km Radius Overlay
-            </label>
-          </div>
-          <div className="checkbox-container">
-            <input
-              type="checkbox"
-              id="mute-toggle"
-              checked={isMuted}
-              onChange={handleMuteToggle}
-              disabled={isLoading}
-            />
-            <label htmlFor="mute-toggle">
-              Mute animation
-            </label>
-          </div>
-        </details>
+        {!isPanelCollapsed && (
+          <>
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: 'pointer', color: '#e0e6f3', marginBottom: 8 }}>Options</summary>
+              <div className="checkbox-container">
+                <input
+                  type="checkbox"
+                  id="radius-toggle"
+                  checked={showRadius}
+                  onChange={handleRadiusToggle}
+                  disabled={isLoading}
+                />
+                <label htmlFor="radius-toggle">
+                  Show ±23km Radius Overlay
+                </label>
+              </div>
+              <div className="checkbox-container">
+                <input
+                  type="checkbox"
+                  id="mute-toggle"
+                  checked={isMuted}
+                  onChange={handleMuteToggle}
+                  disabled={isLoading}
+                />
+                <label htmlFor="mute-toggle">Mute animation</label>
+              </div>
+            </details>
 
-        <button
-          className="play-button"
-          onClick={handlePlay}
-          disabled={isLoading || isPlaying}
-        >
-          {isPlaying ? 'Playing…' : 'Play Animation'}
-        </button>
+            <button
+              className="play-button"
+              onClick={handlePlay}
+              disabled={isLoading || isPlaying}
+            >
+              {isPlaying ? 'Playing…' : 'Play Animation'}
+            </button>
 
-        <div className="stats">
-          <div className="stats-item">
-            <span>Visible:</span>
-            <span className="stats-value">
-              {stats.visibleCount.toLocaleString()}
-            </span>
-          </div>
-          <div className="stats-item">
-            <span>Total:</span>
-            <span className="stats-value">
-              {stats.totalCount.toLocaleString()}
-            </span>
-          </div>
-          <div className="stats-item">
-            <span>Filtered:</span>
-            <span className="stats-value">
-              {((stats.visibleCount / stats.totalCount) * 100).toFixed(1)}%
-            </span>
-          </div>
+            <div className="stats">
+              <div className="stats-item">
+                <span>Visible:</span>
+                <span className="stats-value">{stats.visibleCount.toLocaleString()}</span>
+              </div>
+              <div className="stats-item">
+                <span>Total:</span>
+                <span className="stats-value">{stats.totalCount.toLocaleString()}</span>
+              </div>
+              <div className="stats-item">
+                <span>Filtered:</span>
+                <span className="stats-value">{((stats.visibleCount / stats.totalCount) * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </>
+        )}
+
+        <div className="control-panel__footer">
+          <button
+            className="control-panel__caret"
+            aria-label={isPanelCollapsed ? 'Expand controls' : 'Collapse controls'}
+            onClick={() => setIsPanelCollapsed(prev => !prev)}
+          >
+            {isPanelCollapsed ? (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
     </div>

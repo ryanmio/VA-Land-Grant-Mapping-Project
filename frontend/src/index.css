@@ -43,11 +43,44 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
+.control-panel.collapsed {
+  padding-bottom: 8px;
+}
+
 .control-panel h3 {
   margin: 0 0 16px 0;
   font-size: 20px;
   font-weight: 700;
   color: #fff;
+}
+
+/* Footer caret */
+.control-panel__footer {
+  position: relative;
+  height: 0;
+}
+
+.control-panel__caret {
+  position: absolute;
+  left: 50%;
+  bottom: -14px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  color: #fff;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.control-panel__caret:hover {
+  background: rgba(255,255,255,0.16);
 }
 
 /* Year slider */
