@@ -282,6 +282,16 @@ const GrantMap: React.FC<GrantMapProps> = ({
       )}
 
       {/* Attribution */}
+      {/* Year legend */}
+      <div className="year-legend" aria-label="Year color legend">
+        <div className="year-legend__bar" />
+        <div className="year-legend__labels">
+          <span>1600</span>
+          <span>1800</span>
+        </div>
+      </div>
+      
+      {/* Attribution */}
       <div className="attribution">
         Virginia Land Grants • 
         <a 
