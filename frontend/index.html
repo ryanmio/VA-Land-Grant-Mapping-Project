@@ -3,19 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Interactive atlas of Virginia land grants with year filtering and radius overlay" />
+  <meta name="description" content="Colony-scale visualization of approximate locations based on AI-inferred lat/lon from all Virginia land grants, 1600–1800." />
   <meta name="keywords" content="virginia, land grants, historical maps, atlas, GIS" />
-  <meta name="author" content="Virginia Land Grant Atlas" />
+  <meta name="author" content="Virginia Land Grant Project" />
   
   <!-- Open Graph meta tags -->
-  <meta property="og:title" content="Virginia Land Grant Atlas" />
-  <meta property="og:description" content="Interactive atlas of Virginia land grants with year filtering" />
+  <meta property="og:title" content="Virginia Land Grant Project" />
+  <meta property="og:description" content="Colony-scale visualization of approximate locations based on AI-inferred lat/lon from all Virginia land grants, 1600–1800." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="/og-share.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Preview of the Virginia Land Grant Project" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Virginia Land Grant Project" />
+  <meta name="twitter:description" content="Colony-scale visualization of approximate locations based on AI-inferred lat/lon from all Virginia land grants, 1600–1800." />
+  <meta name="twitter:image" content="/og-share.png" />
   
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <!-- Icons and PWA manifest -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#ffffff" />
   
-  <title>Virginia Land Grant Atlas</title>
+  <title>Virginia Land Grant Project</title>
   
   <style>
     /* Critical CSS for initial load */
@@ -66,7 +78,7 @@
 </head>
 <body>
   <div id="root">
-    <div class="loading">Loading Virginia Land Grant Atlas...</div>
+    <div class="loading">Loading Virginia Land Grant Project...</div>
   </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
