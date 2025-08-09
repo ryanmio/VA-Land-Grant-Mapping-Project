@@ -91,7 +91,8 @@ const GrantMap: React.FC<GrantMapProps> = ({
       const blue = Math.floor((1 - normalizedYear) * 255)
       const green = 50
       
-      return [red, green, blue, showRadius ? 60 : 180]
+      // Lower alpha for overlay to avoid obscuring basemap when overlapping
+      return [red, green, blue, showRadius ? 25 : 180]
     },
     
     // Interaction
@@ -112,11 +113,16 @@ const GrantMap: React.FC<GrantMapProps> = ({
     filterRange: [yearMin, yearMax],
     filterSoftRange: [yearMin - 1, yearMax + 1],
     
-    // Performance settings
+    // Stroke/fill and opacity to keep map readable under heavy overlap
+    opacity: showRadius ? 0.25 : 1,
+    stroked: showRadius ? true : false,
+    getLineColor: showRadius ? [255, 255, 255, 120] : [0, 0, 0, 0],
+    lineWidthUnits: 'pixels',
+    getLineWidth: showRadius ? 1.2 : 0,
+    lineWidthMinPixels: showRadius ? 1 : 0,
+    filled: true,
     fp64: false,
-    billboard: false,
-    stroked: false,
-    filled: true
+    billboard: false
   }), [grantData, yearMin, yearMax, showRadius, dataFilterExtension])
 
   // Handle hover
