@@ -34,18 +34,19 @@ body {
   top: 20px;
   left: 20px;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 8px;
-  padding: 20px;
+  background: rgba(0, 0, 0, 0.75);
+  border-radius: 12px;
+  padding: 18px 18px 14px 18px;
   min-width: 300px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
 .control-panel h3 {
   margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   color: #fff;
 }
 
@@ -65,10 +66,11 @@ body {
 
 .year-range {
   font-weight: 600;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
-  border-radius: 4px;
+  color: #e9f0ff;
+  background: linear-gradient(180deg, rgba(79,158,255,0.18), rgba(79,158,255,0.08));
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(79,158,255,0.25);
 }
 
 /* Range slider styling */
@@ -110,7 +112,7 @@ body {
 .checkbox-container {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin: 6px 0 10px 0;
   cursor: pointer;
   user-select: none;
 }
@@ -132,11 +134,11 @@ body {
 /* Control buttons */
 .export-button,
 .play-button {
-  background: #4f9eff;
+  background: linear-gradient(180deg, #5aa7ff, #428ef0);
   color: white;
   border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
+  padding: 12px 16px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -146,7 +148,7 @@ body {
 
 .export-button:hover,
 .play-button:hover {
-  background: #357abd;
+  background: linear-gradient(180deg, #4d9bff, #357abd);
   transform: translateY(-1px);
 }
 
@@ -164,8 +166,8 @@ body {
 
 /* Stats display */
 .stats {
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 13px;
   color: #ccc;
@@ -190,9 +192,9 @@ body {
   transform: translate(-50%, -50%);
   text-align: center;
   z-index: 2000;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.85);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   backdrop-filter: blur(10px);
 }
 
@@ -217,10 +219,42 @@ body {
   right: 10px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.7);
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.55);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   z-index: 1000;
+}
+
+/* Options accordion */
+details {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 10px;
+}
+
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+details > summary::before {
+  content: '▸';
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+details[open] > summary::before {
+  transform: rotate(90deg);
 }
 
 /* Responsive adjustments */

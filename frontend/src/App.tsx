@@ -168,7 +168,7 @@ const App: React.FC = () => {
         />
 
         <details style={{ marginTop: 12 }}>
-          <summary style={{ cursor: 'pointer', color: '#ccc', marginBottom: 8 }}>Options</summary>
+          <summary style={{ cursor: 'pointer', color: '#e0e6f3', marginBottom: 8 }}>Options</summary>
           <div className="checkbox-container">
             <input
               type="checkbox"
