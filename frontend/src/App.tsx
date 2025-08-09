@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import GrantMap from './components/GrantMap'
 import YearSlider from './components/YearSlider'
+import { sonifier } from './audio/sonifier'
 
 interface Stats {
   visibleCount: number
@@ -14,6 +15,11 @@ const App: React.FC = () => {
   const [stats, setStats] = useState<Stats>({ visibleCount: 0, totalCount: 0 })
   const [isPlaying, setIsPlaying] = useState(false)
   const playTimerRef = useRef<number | null>(null)
+  const [soundEnabled, setSoundEnabled] = useState(false)
+  const lastTickedYearRef = useRef<number | null>(null)
+  const lastSoundedYearRef = useRef<number | null>(null)
+  const latestYearCountsRef = useRef<Map<number, number>>(new Map())
+  const dataYearBoundsRef = useRef<{ minYear: number; maxYear: number } | null>(null)
 
   // Parse URL parameters with defaults
   const yearMin = useMemo(() => {
@@ -53,6 +59,15 @@ const App: React.FC = () => {
     updateURL(yearMin, yearMax, newShowRadius)
   }, [updateURL, yearMin, yearMax])
 
+  // Sound toggle; initialize audio on first enable (user gesture)
+  const handleSoundToggle = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const enabled = event.target.checked
+    setSoundEnabled(enabled)
+    if (enabled) {
+      sonifier.init()
+    }
+  }, [])
+
   // Handle stats updates from the map
   const handleStatsUpdate = useCallback((newStats: Stats) => {
     setStats(newStats)
@@ -62,17 +77,24 @@ const App: React.FC = () => {
   const handlePlay = useCallback(() => {
     if (isPlaying) return
     setIsPlaying(true)
+    lastTickedYearRef.current = null
+    lastSoundedYearRef.current = null
     
-    let current = 1600
-    // Initialize range at 1600-1600
-    updateURL(1600, 1600, showRadius)
+    const startYear = 1600
+    const endYear = 1800
+
+    let current = startYear
+    // Initialize range at startYear-startYear
+    updateURL(startYear, startYear, showRadius)
+    lastTickedYearRef.current = startYear
     
     // 50ms per year ~ 10s total
     playTimerRef.current = window.setInterval(() => {
       current += 1
-      const nextMax = Math.min(current, 1800)
-      updateURL(1600, nextMax, showRadius)
-      if (nextMax >= 1800) {
+      const nextMax = Math.min(current, endYear)
+      updateURL(startYear, nextMax, showRadius)
+      lastTickedYearRef.current = nextMax
+      if (nextMax >= endYear) {
         if (playTimerRef.current) {
           clearInterval(playTimerRef.current)
           playTimerRef.current = null
@@ -80,7 +102,7 @@ const App: React.FC = () => {
         setIsPlaying(false)
       }
     }, 50)
-  }, [isPlaying, updateURL, showRadius])
+  }, [isPlaying, updateURL, showRadius, soundEnabled])
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -115,6 +137,22 @@ const App: React.FC = () => {
         yearMax={yearMax}
         showRadius={showRadius}
         onStatsUpdate={handleStatsUpdate}
+        onYearDistribution={(byYear: Map<number, number>) => {
+          // Cache the distribution; actual playback is driven by the interval tick
+          latestYearCountsRef.current = byYear
+        }}
+        onYearBounds={(bounds) => {
+          dataYearBoundsRef.current = bounds
+        }}
+        onRenderedYearTick={(year, count) => {
+          // Only sound when actively playing, sound enabled, and the render shows new points
+          if (!isPlaying || !soundEnabled) return
+          if (lastSoundedYearRef.current === year) return
+          if (count > 0) {
+            sonifier.playYear(year, count)
+          }
+          lastSoundedYearRef.current = year
+        }}
       />
 
       <div className="control-panel">
@@ -150,6 +188,19 @@ const App: React.FC = () => {
         >
           {isPlaying ? 'Playing…' : 'Play Animation'}
         </button>
+
+        <div className="checkbox-container">
+          <input
+            type="checkbox"
+            id="sound-toggle"
+            checked={soundEnabled}
+            onChange={handleSoundToggle}
+            disabled={isLoading}
+          />
+          <label htmlFor="sound-toggle">
+            Enable sound on play
+          </label>
+        </div>
 
         <div className="stats">
           <div className="stats-item">

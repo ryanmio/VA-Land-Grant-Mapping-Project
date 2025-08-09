@@ -2,7 +2,7 @@ import React, { useMemo, useCallback, useRef, useState, useEffect } from 'react'
 import DeckGL from '@deck.gl/react'
 import { ScatterplotLayer } from '@deck.gl/layers'
 import { DataFilterExtension } from '@deck.gl/extensions'
-import Map from 'react-map-gl/maplibre'
+import MapGL from 'react-map-gl/maplibre'
 import type { MapRef } from 'react-map-gl/maplibre'
 import type { PickingInfo, Deck } from '@deck.gl/core'
 
@@ -11,6 +11,9 @@ interface GrantMapProps {
   yearMax: number
   showRadius: boolean
   onStatsUpdate?: (stats: { visibleCount: number; totalCount: number }) => void
+  onYearDistribution?: (byYear: Map<number, number>) => void
+  onYearBounds?: (bounds: { minYear: number; maxYear: number }) => void
+  onRenderedYearTick?: (year: number, count: number) => void
 }
 
 interface GrantFeature {
@@ -38,12 +41,16 @@ const GrantMap: React.FC<GrantMapProps> = ({
   yearMin,
   yearMax,
   showRadius,
-  onStatsUpdate
+  onStatsUpdate,
+  onYearDistribution,
+  onYearBounds,
+  onRenderedYearTick
 }) => {
   const deckRef = useRef<Deck>(null)
   const mapRef = useRef<MapRef>(null)
   const [hoveredFeature, setHoveredFeature] = useState<GrantFeature | null>(null)
   const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null)
+  const lastRenderedYearRef = useRef<number | null>(null)
 
   // Create the data filter extension for GPU-side year filtering
   const dataFilterExtension = useMemo(() => new DataFilterExtension({
@@ -64,6 +71,29 @@ const GrantMap: React.FC<GrantMapProps> = ({
         console.error('Error loading grant data:', error)
       })
   }, [])
+
+  // Build a histogram of counts per year once data is loaded
+  const yearCounts = useMemo(() => {
+    const counts = new Map<number, number>()
+    for (const feature of grantData) {
+      const y = typeof feature?.properties?.year === 'number' ? feature.properties.year : undefined
+      if (y && y >= 1600 && y <= 1800) {
+        counts.set(y, (counts.get(y) || 0) + 1)
+      }
+    }
+    return counts
+  }, [grantData])
+
+  const yearBounds = useMemo(() => {
+    if (yearCounts.size === 0) return null
+    let minY = Infinity
+    let maxY = -Infinity
+    yearCounts.forEach((_v, y) => {
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    })
+    return { minYear: minY, maxYear: maxY }
+  }, [yearCounts])
 
   // Scatterplot layer for grants
   const scatterplotLayer = useMemo(() => new ScatterplotLayer({
@@ -163,6 +193,30 @@ const GrantMap: React.FC<GrantMapProps> = ({
     }
   }, [grantData, yearMin, yearMax, onStatsUpdate])
 
+  // Notify consumer with year distribution on each year change (for sound timing)
+  useEffect(() => {
+    if (onYearDistribution && yearCounts.size > 0) {
+      onYearDistribution(yearCounts)
+    }
+  }, [onYearDistribution, yearCounts, yearMax])
+
+  useEffect(() => {
+    if (onYearBounds && yearBounds) {
+      onYearBounds(yearBounds)
+    }
+  }, [onYearBounds, yearBounds])
+
+  // After each DeckGL render, fire a callback if a new year is visible and has points
+  const handleAfterRender = useCallback(() => {
+    if (!onRenderedYearTick) return
+    if (lastRenderedYearRef.current === yearMax) return
+    const count = yearCounts.get(yearMax) || 0
+    if (count > 0) {
+      onRenderedYearTick(yearMax, count)
+    }
+    lastRenderedYearRef.current = yearMax
+  }, [onRenderedYearTick, yearMax, yearCounts])
+
   return (
     <div className="map-container">
       <DeckGL
@@ -173,8 +227,9 @@ const GrantMap: React.FC<GrantMapProps> = ({
         onHover={onHover}
         onClick={onClick}
         getCursor={({ isHovering }) => isHovering ? 'pointer' : 'grab'}
+        onAfterRender={handleAfterRender}
       >
-        <Map
+        <MapGL
           ref={mapRef}
           mapStyle={MAP_STYLE}
           attributionControl={false}
