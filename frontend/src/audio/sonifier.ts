@@ -10,7 +10,6 @@ export class Sonifier {
   private static instance: Sonifier | null = null
   private audioContext: AudioContext | null = null
   private masterGain: GainNode | null = null
-  private limiter: DynamicsCompressorNode | null = null
   private initialized: boolean = false
 
   static getInstance(): Sonifier {
@@ -39,7 +38,6 @@ export class Sonifier {
 
     this.audioContext = ctx
     this.masterGain = master
-    this.limiter = limiter
     this.initialized = true
   }
 
