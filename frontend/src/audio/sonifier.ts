@@ -65,17 +65,48 @@ export class Sonifier {
       } catch (_) {
         /* no-op */
       }
+      // Also play a tiny silent buffer to fully unlock on older iOS
+      this.pokeOutput()
       if (this.audioContext.state === 'running') {
         window.removeEventListener('touchend', resume, true)
+        window.removeEventListener('touchstart', resume, true)
         window.removeEventListener('pointerdown', resume, true)
+        window.removeEventListener('click', resume, true)
         window.removeEventListener('keydown', resume, true)
+        document.removeEventListener('visibilitychange', resume, true)
         this.unlockAttached = false
       }
     }
     window.addEventListener('touchend', resume, true)
+    window.addEventListener('touchstart', resume, true)
     window.addEventListener('pointerdown', resume, true)
+    window.addEventListener('click', resume, true)
     window.addEventListener('keydown', resume, true)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        void resume()
+      }
+    }, true)
     this.unlockAttached = true
+  }
+
+  // Play a minuscule buffer to prod iOS into enabling audio
+  private pokeOutput(): void {
+    if (!this.audioContext || !this.masterGain) return
+    try {
+      const ctx = this.audioContext
+      const buffer = ctx.createBuffer(1, 1, ctx.sampleRate)
+      const src = ctx.createBufferSource()
+      src.buffer = buffer
+      const gain = ctx.createGain()
+      gain.gain.value = 0.0001
+      src.connect(gain)
+      gain.connect(this.masterGain)
+      src.start(0)
+      src.stop(ctx.currentTime + 0.01)
+    } catch {
+      // ignore
+    }
   }
 
   // Map year to frequency using a C major pentatonic scale over ~2 octaves

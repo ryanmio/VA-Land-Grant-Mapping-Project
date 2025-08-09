@@ -88,6 +88,8 @@ const App: React.FC = () => {
     sonifier.init()
     // Extra safety for iOS: ensure context is running
     void sonifier.ensureRunning()
+    // Poke output on play to help older iOS versions
+    // (invoke playYear with 0 count won't emit; we just rely on ensureRunning/pokeOutput internally)
     
     const startYear = 1600
     const endYear = 1800
