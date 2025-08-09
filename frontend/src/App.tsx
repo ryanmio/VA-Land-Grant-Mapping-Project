@@ -78,6 +78,8 @@ const App: React.FC = () => {
     lastSoundedYearRef.current = null
     // Initialize/resume audio context on user gesture
     sonifier.init()
+    // Extra safety for iOS: ensure context is running
+    void sonifier.ensureRunning()
     
     const startYear = 1600
     const endYear = 1800
@@ -148,6 +150,7 @@ const App: React.FC = () => {
           if (!isPlaying || isMuted) return
           if (lastSoundedYearRef.current === year) return
           if (count > 0) {
+            void sonifier.ensureRunning()
             sonifier.playYear(year, count)
           }
           lastSoundedYearRef.current = year

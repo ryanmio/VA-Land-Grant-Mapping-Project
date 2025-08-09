@@ -11,6 +11,7 @@ export class Sonifier {
   private audioContext: AudioContext | null = null
   private masterGain: GainNode | null = null
   private initialized: boolean = false
+  private unlockAttached: boolean = false
 
   static getInstance(): Sonifier {
     if (!Sonifier.instance) {
@@ -39,6 +40,42 @@ export class Sonifier {
     this.audioContext = ctx
     this.masterGain = master
     this.initialized = true
+    this.attachUnlockHandlers()
+  }
+
+  // Ensure audio context is running (important for iOS Safari autoplay policies)
+  async ensureRunning(): Promise<void> {
+    if (!this.audioContext) return
+    if (this.audioContext.state !== 'running') {
+      try {
+        await this.audioContext.resume()
+      } catch (_) {
+        // ignore; will try again on next gesture
+      }
+    }
+  }
+
+  // Attach one-time gesture handlers to unlock audio on iOS
+  private attachUnlockHandlers(): void {
+    if (this.unlockAttached || !this.audioContext) return
+    const resume = async () => {
+      if (!this.audioContext) return
+      try {
+        await this.audioContext.resume()
+      } catch (_) {
+        /* no-op */
+      }
+      if (this.audioContext.state === 'running') {
+        window.removeEventListener('touchend', resume, true)
+        window.removeEventListener('pointerdown', resume, true)
+        window.removeEventListener('keydown', resume, true)
+        this.unlockAttached = false
+      }
+    }
+    window.addEventListener('touchend', resume, true)
+    window.addEventListener('pointerdown', resume, true)
+    window.addEventListener('keydown', resume, true)
+    this.unlockAttached = true
   }
 
   // Map year to frequency using a C major pentatonic scale over ~2 octaves
