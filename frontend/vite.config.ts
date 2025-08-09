@@ -27,7 +27,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           'deck-gl': ['@deck.gl/core', '@deck.gl/layers', '@deck.gl/extensions', '@deck.gl/react'],
-          'loaders': ['@loaders.gl/pmtiles', '@loaders.gl/core'],
           'maplibre': ['maplibre-gl', 'react-map-gl'],
           'react-vendor': ['react', 'react-dom', 'react-router-dom']
         }
@@ -54,8 +53,6 @@ export default defineConfig({
       '@deck.gl/layers',
       '@deck.gl/extensions',
       '@deck.gl/react',
-      '@loaders.gl/pmtiles',
-      '@loaders.gl/core',
       'maplibre-gl',
       'react-map-gl'
     ]
