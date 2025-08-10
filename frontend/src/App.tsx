@@ -95,7 +95,7 @@ const App: React.FC = () => {
     updateURL(startYear, startYear, showRadius)
     lastTickedYearRef.current = startYear
     
-    // 60–70ms per year is smoother on mobile and reduces CPU
+    // 50ms per year on desktop; if mobile proves choppy we can adaptively lower later
     playTimerRef.current = window.setInterval(() => {
       current += 1
       const nextMax = Math.min(current, endYear)
@@ -108,7 +108,7 @@ const App: React.FC = () => {
         }
         setIsPlaying(false)
       }
-    }, 66)
+    }, 50)
   }, [isPlaying, updateURL, showRadius])
 
   // Cleanup interval on unmount

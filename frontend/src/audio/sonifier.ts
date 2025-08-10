@@ -12,6 +12,11 @@ export class Sonifier {
   private masterGain: GainNode | null = null
   private initialized: boolean = false
   private activeVoices: number = 0
+  private readonly isMobile: boolean = (() => {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent || ''
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+  })()
 
   static getInstance(): Sonifier {
     if (!Sonifier.instance) {
@@ -68,8 +73,9 @@ export class Sonifier {
 
     const safeCount = Math.max(0, numPoints)
     // Number of notes: 1..16, scaling sublinearly with count
-    // Limit burst size for performance, especially on mobile
-    const burstNotes = Math.max(1, Math.min(8, Math.round(2 * Math.log2(safeCount + 1))))
+    // Limit burst size for performance on mobile; desktop keeps richer burst
+    const burstCap = this.isMobile ? 8 : 16
+    const burstNotes = Math.max(1, Math.min(burstCap, Math.round(2 * Math.log2(safeCount + 1))))
     // Total loudness grows with count but is log-compressed
     const totalLoudness = Math.min(0.26, 0.06 + 0.20 * Math.min(1, Math.log1p(safeCount) / Math.log(301)))
     // Distribute across notes sublinearly to avoid clipping
@@ -82,7 +88,8 @@ export class Sonifier {
       const jitter = (Math.random() - 0.5) * 0.006 // +/-6ms
       const startAt = now + i * baseInterval + Math.max(-0.006, Math.min(0.006, jitter))
 
-      if (this.activeVoices > 24) break
+      const voiceCap = this.isMobile ? 24 : 48
+      if (this.activeVoices > voiceCap) break
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
       osc.type = 'sine'
