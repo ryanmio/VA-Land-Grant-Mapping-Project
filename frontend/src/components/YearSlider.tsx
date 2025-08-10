@@ -29,6 +29,19 @@ const YearSlider: React.FC<YearSliderProps> = ({
     }
   }, [yearMin, yearMax, onChange])
 
+  // Reduce re-renders on mobile by throttling onChange to animation frame
+  const handleFinalChange = useCallback((newValues: number[]) => {
+    const [newMin, newMax] = newValues
+    if (newMin !== yearMin || newMax !== yearMax) {
+      // Use requestAnimationFrame to batch updates
+      if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+        window.requestAnimationFrame(() => onChange(newMin, newMax))
+      } else {
+        onChange(newMin, newMax)
+      }
+    }
+  }, [yearMin, yearMax, onChange])
+
   const trackBackground = useMemo(() => 
     getTrackBackground({
       values,
@@ -55,6 +68,7 @@ const YearSlider: React.FC<YearSliderProps> = ({
           max={max}
           disabled={disabled}
           onChange={handleChange}
+          onFinalChange={handleFinalChange}
           renderTrack={({ props, children }) => (
             <div
               {...props}

@@ -84,6 +84,21 @@ const GrantMap: React.FC<GrantMapProps> = ({
     return counts
   }, [grantData])
 
+  // Prefix sums for fast visible count queries: index i corresponds to year 1600 + i
+  const prefixSums = useMemo(() => {
+    const len = 201 // 1600..1800 inclusive
+    const arr = new Array<number>(len).fill(0)
+    for (let i = 0; i < len; i += 1) {
+      const year = 1600 + i
+      arr[i] = yearCounts.get(year) || 0
+    }
+    const pref = new Array<number>(len + 1).fill(0)
+    for (let i = 0; i < len; i += 1) {
+      pref[i + 1] = pref[i] + arr[i]
+    }
+    return pref
+  }, [yearCounts])
+
   const yearBounds = useMemo(() => {
     if (yearCounts.size === 0) return null
     let minY = Infinity
@@ -179,26 +194,22 @@ const GrantMap: React.FC<GrantMapProps> = ({
   useEffect(() => {
     if (onStatsUpdate && grantData.length > 0) {
       const totalCount = grantData.length
-      
-      // Count visible features based on year filter
-      const visibleFeatures = grantData.filter(feature => {
-        const year = feature.properties.year || 1700
-        return year >= yearMin && year <= yearMax
-      })
-      
-      onStatsUpdate({
-        visibleCount: visibleFeatures.length,
-        totalCount: totalCount
-      })
+      // Fast range sum using prefix sums
+      const clampedMin = Math.max(1600, Math.min(1800, yearMin))
+      const clampedMax = Math.max(1600, Math.min(1800, yearMax))
+      const startIdx = clampedMin - 1600
+      const endIdx = clampedMax - 1600
+      const visibleCount = prefixSums[endIdx + 1] - prefixSums[startIdx]
+      onStatsUpdate({ visibleCount, totalCount })
     }
-  }, [grantData, yearMin, yearMax, onStatsUpdate])
+  }, [grantData, yearMin, yearMax, onStatsUpdate, prefixSums])
 
   // Notify consumer with year distribution on each year change (for sound timing)
   useEffect(() => {
     if (onYearDistribution && yearCounts.size > 0) {
       onYearDistribution(yearCounts)
     }
-  }, [onYearDistribution, yearCounts, yearMax])
+  }, [onYearDistribution, yearCounts])
 
   useEffect(() => {
     if (onYearBounds && yearBounds) {
