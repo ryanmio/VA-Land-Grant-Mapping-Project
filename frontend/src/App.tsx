@@ -23,6 +23,9 @@ const App: React.FC = () => {
     return false
   })
   const playTimerRef = useRef<number | null>(null)
+  const rafIdRef = useRef<number | null>(null)
+  const playStartTsRef = useRef<number | null>(null)
+  const [playYearMax, setPlayYearMax] = useState<number | null>(null)
   const [isMuted, setIsMuted] = useState(false)
   const lastTickedYearRef = useRef<number | null>(null)
   const lastSoundedYearRef = useRef<number | null>(null)
@@ -90,25 +93,40 @@ const App: React.FC = () => {
     const startYear = 1600
     const endYear = 1800
 
-    let current = startYear
-    // Initialize range at startYear-startYear
-    updateURL(startYear, startYear, showRadius)
+    // Initialize internal animated state without spamming URL/search params
+    setPlayYearMax(startYear)
     lastTickedYearRef.current = startYear
-    
-    // 50ms per year on desktop; if mobile proves choppy we can adaptively lower later
-    playTimerRef.current = window.setInterval(() => {
-      current += 1
-      const nextMax = Math.min(current, endYear)
-      updateURL(startYear, nextMax, showRadius)
-      lastTickedYearRef.current = nextMax
-      if (nextMax >= endYear) {
-        if (playTimerRef.current) {
-          clearInterval(playTimerRef.current)
-          playTimerRef.current = null
-        }
-        setIsPlaying(false)
+    playStartTsRef.current = null
+
+    const durationMs = 10000 // ~10s total
+    const step = (ts: number) => {
+      if (!playStartTsRef.current) playStartTsRef.current = ts
+      const elapsed = ts - (playStartTsRef.current || ts)
+      const progress = Math.min(1, elapsed / durationMs)
+      const nextMax = Math.min(endYear, Math.floor(startYear + progress * (endYear - startYear)))
+
+      if (lastTickedYearRef.current !== nextMax) {
+        setPlayYearMax(nextMax)
+        lastTickedYearRef.current = nextMax
       }
-    }, 50)
+
+      if (nextMax >= endYear) {
+        // Finish: reflect final state in URL once, then stop
+        updateURL(startYear, endYear, showRadius)
+        setIsPlaying(false)
+        setPlayYearMax(null)
+        playStartTsRef.current = null
+        if (rafIdRef.current) {
+          cancelAnimationFrame(rafIdRef.current)
+          rafIdRef.current = null
+        }
+        return
+      }
+
+      rafIdRef.current = requestAnimationFrame(step)
+    }
+
+    rafIdRef.current = requestAnimationFrame(step)
   }, [isPlaying, updateURL, showRadius])
 
   // Cleanup interval on unmount
@@ -117,6 +135,10 @@ const App: React.FC = () => {
       if (playTimerRef.current) {
         clearInterval(playTimerRef.current)
         playTimerRef.current = null
+      }
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
       }
     }
   }, [])
@@ -147,8 +169,8 @@ const App: React.FC = () => {
       )}
 
       <GrantMap
-        yearMin={yearMin}
-        yearMax={yearMax}
+        yearMin={isPlaying ? 1600 : yearMin}
+        yearMax={isPlaying ? (playYearMax ?? 1600) : yearMax}
         showRadius={showRadius}
         onStatsUpdate={handleStatsUpdate}
         onYearDistribution={(byYear: Map<number, number>) => {
@@ -174,8 +196,8 @@ const App: React.FC = () => {
 
         {/* The year slider remains visible in both states */}
         <YearSlider
-          yearMin={yearMin}
-          yearMax={yearMax}
+          yearMin={isPlaying ? 1600 : yearMin}
+          yearMax={isPlaying ? (playYearMax ?? 1600) : yearMax}
           onChange={handleYearChange}
           min={1600}
           max={1800}
